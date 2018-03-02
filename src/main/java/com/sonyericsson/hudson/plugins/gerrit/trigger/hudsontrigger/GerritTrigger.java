@@ -979,13 +979,40 @@ public class GerritTrigger extends Trigger<Job> {
                                         || (p.getForbiddenFilePaths() != null && p.getForbiddenFilePaths().size() > 0));
 
                         if (isFileTriggerEnabled() && containsFilePathsOrForbiddenFilePaths) {
+                            GerritQueryHandler handler = new GerritQueryHandler(getServerConfig(event));
+                            List<String> files = changeBasedEvent.getFiles(handler);
+                            List<String> arguments = new ArrayList<String>();
+                            String project = changeBasedEvent.getChange().getProject();
+                            if (project != null) {
+                                arguments.add(project);
+                            } else {
+                                arguments.add("Project not there");
+                            }
+                            String branch = changeBasedEvent.getChange().getBranch();
+                            if (branch != null) {
+                                arguments.add(branch);
+                            } else {
+                                arguments.add("Branch not there");
+                            }
+                            String topic = changeBasedEvent.getChange().getTopic();
+                            if (topic != null) {
+                                arguments.add(topic);
+                            } else {
+                                arguments.add("Topic not there");
+                            }
+                            logger.info("[mobility-apps] Project: {}, Branch: {}, Topic: {}", arguments);
+                            if (files != null && !files.isEmpty()) {
+                                for (String file : files) {
+                                    logger.info("[mobility-apps] file: {}", file);
+                                }
+                            }
                             if (isServerInteresting(event)
                                  && p.isInteresting(changeBasedEvent.getChange().getProject(),
                                                     changeBasedEvent.getChange().getBranch(),
                                                     changeBasedEvent.getChange().getTopic(),
-                                                    changeBasedEvent.getFiles(
-                                                        new GerritQueryHandler(getServerConfig(event))))) {
+                                                    files)) {
                                 logger.trace("According to {} the event is interesting.", p);
+
                                 return true;
                             }
                         } else {
